@@ -1,0 +1,570 @@
+/* 全局重置 */
+body { margin: 0; padding: 0; font-family: 'Microsoft YaHei', -apple-system, sans-serif; overflow: hidden; }
+#root { max-width: 100%; margin: 0; padding: 0; text-align: left; }
+
+/* 核心满屏布局 */
+.app-layout { display: flex; width: 100vw; height: 100vh; background-color: #f8fafc; text-align: left; }
+
+/* 左侧深色侧边栏 */
+.side-navigation { width: 260px; background-color: #1a1e29; color: white; padding: 40px 20px; display: flex; flex-direction: column; flex-shrink: 0; box-sizing: border-box; }
+.sidebar-profile { text-align: center; margin-bottom: 40px; }
+.avatar { font-size: 36px; background: #ff4757; width: 64px; height: 64px; border-radius: 16px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; }
+.sidebar-profile h3 { margin: 0 0 5px; font-size: 18px; font-weight: bold; letter-spacing: 1px; }
+.signature { color: #8b95a5; font-size: 12px; margin: 0; letter-spacing: 1px; }
+
+/* 侧边菜单按钮 */
+.sidebar-menu { display: flex; flex-direction: column; gap: 10px; }
+.menu-btn { background: transparent; border: none; text-align: left; padding: 16px 20px; border-radius: 12px; font-size: 15px; color: #8b95a5; cursor: pointer; transition: all 0.2s; }
+.menu-btn:hover { background-color: rgba(255,255,255,0.05); color: white; }
+.menu-btn.active { background-color: #2a3040; color: white; font-weight: bold; }
+
+/* 主内容区（带平滑滚动属性） */
+.main-content { 
+  flex: 1; 
+  padding: 40px 60px; 
+  overflow-y: auto; 
+  text-align: left; 
+  box-sizing: border-box; 
+  scroll-behavior: smooth; /* 【关键魔法】：让锚点跳转变成平滑滑动 */
+}
+
+.page-header { margin-bottom: 40px; border-bottom: 1px solid #e2e8f0; padding-bottom: 20px; text-align: left; }
+.page-header h1 { font-size: 28px; color: #1e293b; margin: 0 0 8px 0; }
+.page-header p { color: #64748b; margin: 0; font-size: 15px; }
+.section-title { color: #1e293b; font-size: 20px; margin-bottom: 20px; }
+.fade-in { animation: fadeIn 0.4s ease-in-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+
+/* ✨--- 新增：日记区左右布局（时间轴 + 日记流） ---✨ */
+.diary-layout {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+}
+
+/* 时间轴目录样式 */
+.timeline-index {
+  width: 140px;
+  flex-shrink: 0;
+  position: sticky; /* 页面往下划的时候，它会钉在屏幕上不走 */
+  top: 0px; 
+  border-left: 2px solid #e2e8f0;
+  padding-left: 20px;
+  margin-top: 20px;
+}
+
+.timeline-title {
+  font-size: 14px;
+  color: #94a3b8;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.timeline-index ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.timeline-index li {
+  margin-bottom: 18px;
+  position: relative;
+}
+
+/* 时间轴上的小圆点 */
+.timeline-index li::before {
+  content: '';
+  position: absolute;
+  left: -25px; /* 把圆点推到左边那条线上 */
+  top: 5px;
+  width: 8px;
+  height: 8px;
+  background-color: #cbd5e1;
+  border-radius: 50%;
+  transition: all 0.3s;
+}
+
+.timeline-index li:hover::before {
+  background-color: #ff4757;
+  transform: scale(1.5);
+}
+
+.timeline-index a {
+  text-decoration: none;
+  color: #64748b;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.timeline-index a:hover {
+  color: #ff4757;
+  font-weight: bold;
+}
+
+/* 右侧日记流 */
+.diary-feed {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 40px; /* 每篇日记之间的间距 */
+}
+
+
+/* --- 卡片通用样式 --- */
+.diary-post, .about-card { background-color: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #f1f5f9; }
+.post-header { margin-bottom: 16px; color: #94a3b8; font-size: 14px; }
+.post-content { display: flex; gap: 20px; align-items: flex-start; text-align: left; }
+.post-image { width: 50%; border-radius: 12px; object-fit: cover; aspect-ratio: 4/3; background-color: #e2e8f0; }
+.post-text-area { width: 50%; display: flex; flex-direction: column; justify-content: space-between; min-height: 100%; }
+.post-text { color: #475569; line-height: 1.8; font-size: 15px; margin-top: 0; margin-bottom: 20px;}
+.post-actions { display: flex; gap: 12px; }
+.btn-like { background-color: #f1f5f9; color: #475569; padding: 10px 18px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; transition: all 0.2s;}
+.btn-like:hover { background-color: #fee2e2; color: #ef4444; }
+.btn-comment { background-color: #eff6ff; color: #3b82f6; padding: 10px 18px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold;}
+
+.photo-grid-demo { display: flex; flex-wrap: wrap; gap: 15px; }
+.photo-placeholder { width: 220px; height: 220px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); background-color: #e2e8f0;}
+.photo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
+/* ✨--- 全新加入的日历控件样式 ---✨ */
+.calendar-widget {
+  background-color: white;
+  border-radius: 16px;
+  padding: 24px 30px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f1f5f9;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.calendar-title {
+  margin: 0;
+  font-size: 20px;
+  color: #1e293b;
+}
+
+/* 切换按钮组 */
+.cal-toggles {
+  display: flex;
+  background-color: #f1f5f9;
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.cal-toggles button {
+  background: transparent;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 8px;
+  color: #64748b;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.cal-toggles button.active {
+  background-color: white;
+  color: #ff4757;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* 日历栅格基础布局 */
+.calendar-grid {
+  display: grid;
+  gap: 10px;
+  text-align: center;
+}
+
+/* 月视图和周视图：分成 7 列 */
+.grid-month, .grid-week { grid-template-columns: repeat(7, 1fr); }
+
+/* 年视图：分成 4 列 (一行4个月) */
+.grid-year { grid-template-columns: repeat(4, 1fr); gap: 15px; }
+
+/* 表头文字（周一到周日） */
+.cal-head {
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: bold;
+  padding-bottom: 10px;
+}
+
+/* 每一天的格子 */
+.cal-cell {
+  aspect-ratio: 1 / 1; /* 让格子保持正方形 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 15px;
+  color: #334155;
+  text-decoration: none;
+  transition: all 0.2s;
+  cursor: pointer;
+  position: relative;
+}
+
+.cal-cell:hover { background-color: #f8fafc; }
+.cal-cell.empty { color: #cbd5e1; cursor: default; }
+
+/* 重点：有日记的日期样式（带有小红点和粉色背景） */
+.cal-cell.has-record {
+  background-color: #fff0f2;
+  color: #ff4757;
+  font-weight: bold;
+  border: 1px solid #ffe4e8;
+}
+
+.cal-cell.has-record:hover {
+  background-color: #ffe4e8;
+  transform: translateY(-2px); /* 悬浮稍微跳动一下 */
+}
+
+/* 日期下方的专属小红点 */
+.cal-cell.has-record::after {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  width: 6px;
+  height: 6px;
+  background-color: #ff4757;
+  border-radius: 50%;
+}
+
+/* 年视图的月份格子 */
+.cal-month-cell {
+  padding: 20px 0;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  color: #475569;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.cal-month-cell:hover {
+  background-color: #f1f5f9;
+  transform: translateY(-2px);
+}
+
+.cal-month-cell.current-month {
+  background-color: #1a1e29;
+  color: white;
+}
+
+.month-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #ff4757;
+  border-radius: 50%;
+}
+/* --- 左侧写日记按钮 --- */
+.publish-btn {
+  background: linear-gradient(135deg, #ff4757, #ff6b81);
+  color: white;
+  border: none;
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
+  transition: all 0.2s;
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+.publish-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+}
+
+/* --- 弹窗的黑色半透明背景遮罩 --- */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* 确保弹窗在网页的最上层 */
+  backdrop-filter: blur(4px); /* 背景模糊特效 */
+}
+
+/* --- 弹窗白板主体 --- */
+.publish-modal {
+  background-color: white;
+  width: 500px;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  animation: modalPop 0.3s ease-out;
+}
+@keyframes modalPop {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.modal-header h2 { margin: 0; color: #1e293b; font-size: 22px; }
+.close-btn { background: none; border: none; font-size: 28px; color: #94a3b8; cursor: pointer; }
+
+/* --- 弹窗内的输入框和上传区 --- */
+.input-group { margin-bottom: 20px; display: flex; flex-direction: column; text-align: left; }
+.input-group label { margin-bottom: 8px; color: #475569; font-weight: bold; font-size: 14px; }
+.modal-input, .modal-textarea {
+  border: 1px solid #cbd5e1;
+  padding: 12px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 15px;
+  color: #334155;
+}
+.modal-input:focus, .modal-textarea:focus { outline: none; border-color: #ff4757; }
+
+/* 虚线框的上传照片区域 */
+.upload-area {
+  border: 2px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 40px 20px;
+  text-align: center;
+  color: #94a3b8;
+  position: relative;
+  background-color: #f8fafc;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.upload-area:hover { border-color: #ff4757; background-color: #fff0f2; color: #ff4757; }
+.file-input {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  opacity: 0; /* 把真实的丑丑的上传按钮隐藏起来，只留虚线框 */
+  cursor: pointer;
+}
+
+/* 弹窗底部按钮 */
+.modal-footer { display: flex; justify-content: flex-end; gap: 15px; margin-top: 30px; }
+.btn-cancel { background: #f1f5f9; color: #64748b; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+.btn-submit { background: #ff4757; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+/* ✨--- 发布框样式 ---✨ */
+.compose-box {
+  background-color: white;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+  border: 1px solid #f1f5f9;
+}
+
+.compose-box textarea {
+  width: 100%;
+  height: 80px;
+  border: none;
+  resize: none;
+  font-size: 16px;
+  font-family: inherit;
+  color: #334155;
+  outline: none;
+}
+
+.compose-box textarea::placeholder { color: #cbd5e1; }
+
+.compose-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 15px;
+}
+
+.upload-btn {
+  background-color: #f1f5f9;
+  color: #475569;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.upload-btn:hover { background-color: #e2e8f0; }
+
+.upload-primary {
+  background-color: #eff6ff;
+  color: #3b82f6;
+}
+
+.send-btn {
+  background-color: #ff4757;
+  color: white;
+  padding: 10px 24px;
+  border: none;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(255, 71, 87, 0.3);
+  transition: all 0.2s;
+}
+
+.send-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(255, 71, 87, 0.4); }
+
+.preview-img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-top: 15px;
+  border: 2px solid #ff4757;
+}
+
+/* ✨--- 魔术回忆视频按钮 ---✨ */
+.magic-btn {
+  background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.magic-btn:hover { transform: scale(1.05); }
+
+
+/* 🎬--- 隐藏的全屏播放器 (模拟 iPhone 回忆) ---🎬 */
+.fullscreen-player {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #000;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.close-player {
+  position: absolute;
+  top: 30px; right: 30px;
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  z-index: 10000;
+  backdrop-filter: blur(5px);
+}
+
+.player-title {
+  position: absolute;
+  bottom: 50px;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+  z-index: 10000;
+}
+
+/* 神奇的 Ken Burns 缓慢推进动画 */
+.ken-burns-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  animation: kenBurnsFade 3s ease-in-out forwards;
+}
+
+@keyframes kenBurnsFade {
+  0% { opacity: 0; transform: scale(1.1); }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.2); } /* 缓慢放大并消失 */
+}
+/* 🎬--- 内嵌自动回忆播放器 (嵌入关于我们页面) ---🎬 */
+.memory-widget {
+  width: 100%;
+  height: 350px;
+  background-color: #000;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 30px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.memory-overlay {
+  position: absolute;
+  bottom: 30px;
+  left: 30px;
+  color: white;
+  z-index: 10;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+
+.memory-overlay h3 { margin: 0 0 5px 0; font-size: 24px; }
+.memory-overlay p { margin: 0; color: rgba(255,255,255,0.8); font-size: 14px; }
+
+.memory-empty {
+  color: rgba(255,255,255,0.6);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 神奇的 Ken Burns 缓慢推进放大动画 */
+.ken-burns-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  /* 动画时间比之前更长，显得更优雅 */
+  animation: kenBurnsFade 3.5s ease-in-out forwards; 
+}
+
+@keyframes kenBurnsFade {
+  0% { opacity: 0; transform: scale(1.05); }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.15); } 
+}
+/* ✨--- 日期选择器样式 ---✨ */
+.date-picker-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  color: #475569;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.date-picker {
+  margin-left: 10px;
+  padding: 8px 15px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-family: inherit;
+  color: #1e293b;
+  outline: none;
+  cursor: pointer;
+  background-color: #f8fafc;
+  transition: border-color 0.2s;
+}
+
+.date-picker:focus {
+  border-color: #ff4757;
+  background-color: white;
+}
