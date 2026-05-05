@@ -11,6 +11,9 @@ function App() {
   const [expandedTimeline, setExpandedTimeline] = useState({}); // 🌳 记住时光树里哪些枝桠被折叠了
   const [isCollapsed, setIsCollapsed] = useState(false); // 👈 新增：控制侧边栏折叠的开关
 
+  // ✨ 新增魔法：控制全屏放大图片的开关
+  const [fullscreenImg, setFullscreenImg] = useState(null);
+
 // --- 🌟 核心动态数据 🌟 ---
 
   // 1. 日记数据（初始为空屏幕）
@@ -43,6 +46,7 @@ function App() {
   // 3. 照片墙数据
   const [standalonePhotos, setStandalonePhotos] = useState(() => {
     const saved = localStorage.getItem('love_photos');
+    // 如果没有本地数据，默认给空数组
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -51,6 +55,12 @@ function App() {
     const saved = localStorage.getItem('love_about_photos');
     return saved ? JSON.parse(saved) : [];
   });
+
+  // ✨ 云端魔法 3：自动清理全网访客浏览器里的那张占位网图！
+  useEffect(() => {
+    // 这段逻辑会自动筛选掉那张 pexels 的默认图链接
+    setStandalonePhotos(prev => prev.filter(url => !url.includes('pexels-photo-3178818')));
+  }, []);
 
   // --- 💾 自动存档魔法 (只要你在网页上发了日记或删了东西，瞬间自动存入浏览器) ---
   useEffect(() => { localStorage.setItem('love_diaries', JSON.stringify(diaries)); }, [diaries]);
@@ -406,7 +416,7 @@ function App() {
                       <span style={{ fontSize: '12px', color: '#94a3b8' }}>已选 {newDiaryImgs.length} 张照片预览：</span>
                       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '8px' }}>
                         {newDiaryImgs.map((url, idx) => (
-                          <img key={idx} src={url} alt="预览" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #fbcfe8' }} />
+                          <img key={idx} src={url} alt="预览" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #fbcfe8', cursor: 'zoom-in' }} onClick={() => setFullscreenImg(url)} />
                         ))}
                       </div>
                     </div>
@@ -610,7 +620,7 @@ function App() {
                                 {editImgs.length > 0 && (
                                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
                                     {editImgs.map((url, idx) => (
-                                      <img key={idx} src={url} alt="预览" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #fbcfe8' }} />
+                                      <img key={idx} src={url} alt="预览" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #fbcfe8', cursor: 'zoom-in' }} onClick={() => setFullscreenImg(url)} />
                                     ))}
                                   </div>
                                 )}
@@ -625,7 +635,7 @@ function App() {
                                   {diary.img && (
                                     <div style={{ display: 'grid', gridTemplateColumns: diary.img.includes(',') ? '1fr 1fr' : '1fr', gap: '10px', marginBottom: '15px' }}>
                                       {diary.img.split(',').map((imgUrl, idx, arr) => (
-                                        <img key={idx} src={imgUrl} alt="日记配图" className="post-image" style={{ width: '100%', height: arr.length === 1 ? 'auto' : '250px', objectFit: 'cover', borderRadius: '12px', margin: 0 }} />
+                                        <img key={idx} src={imgUrl} alt="日记配图" className="post-image" style={{ width: '100%', height: arr.length === 1 ? 'auto' : '250px', objectFit: 'cover', borderRadius: '12px', margin: 0, cursor: 'zoom-in' }} onClick={() => setFullscreenImg(imgUrl)} />
                                       ))}
                                     </div>
                                   )}
@@ -747,17 +757,21 @@ function App() {
                    <div 
                      className="photo-placeholder" 
                      key={idx}
-                     // ✨ 如果找到了对应的日记，就绑定点击跳转魔法
-                     onClick={linkedDiary ? () => jumpToDiary(linkedDiary.id) : undefined}
-                     // 给有日记的照片变成“小手”图标，提示可以点击
-                     style={{ cursor: linkedDiary ? 'pointer' : 'default', position: 'relative' }}
-                     title={linkedDiary ? `点击穿越回 ${linkedDiary.date} 的日记` : ''}
+                     style={{ position: 'relative' }}
                    >
-                     <img src={imgSrc} alt="照片墙" />
+                     <img 
+                       src={imgSrc} 
+                       alt="照片墙" 
+                       style={{ cursor: 'zoom-in' }} 
+                       onClick={() => setFullscreenImg(imgSrc)} // ✨ 点击图片本体：放大
+                     />
                      
                      {/* ✨ 给可以跳转的照片角落加个半透明的日期小提示 ✨ */}
                      {linkedDiary && (
-                       <span style={{ position: 'absolute', bottom: '8px', right: '8px', background: 'rgba(0,0,0,0.5)', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', backdropFilter: 'blur(4px)' }}>
+                       <span 
+                         onClick={(e) => { e.stopPropagation(); jumpToDiary(linkedDiary.id); }} // ✨ 加上冒泡防止触发图片放大
+                         style={{ position: 'absolute', bottom: '8px', right: '8px', background: 'rgba(0,0,0,0.5)', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', backdropFilter: 'blur(4px)', cursor: 'pointer' }}
+                       >
                          📖 跳转日记
                        </span>
                      )}
@@ -775,7 +789,7 @@ function App() {
             <div className="memory-widget">
               {allPhotos.length > 0 ? (
                 <>
-                  <img key={currentSlideIndex} src={allPhotos[currentSlideIndex]} className="ken-burns-img" alt="回忆" />
+                  <img key={currentSlideIndex} src={allPhotos[currentSlideIndex]} className="ken-burns-img" alt="回忆" style={{ cursor: 'zoom-in' }} onClick={() => setFullscreenImg(allPhotos[currentSlideIndex])} />
                   <div className="memory-overlay">
                     <h3>💑 专属回忆正在生成...</h3>
                     <p>为你自动提取了 {allPhotos.length} 张恋爱瞬间</p>
@@ -796,7 +810,9 @@ function App() {
               {aboutPhotos.length > 0 && (
                 <div className="photo-grid-demo" style={{marginTop:'20px'}}>
                   {aboutPhotos.map((img, idx) => (
-                    <div className="photo-placeholder" key={`about-${idx}`}><img src={img} alt="关于" /></div>
+                    <div className="photo-placeholder" key={`about-${idx}`}>
+                        <img src={img} alt="关于" style={{ cursor: 'zoom-in' }} onClick={() => setFullscreenImg(img)} />
+                    </div>
                   ))}
                 </div>
               )}
@@ -835,7 +851,7 @@ function App() {
                           {diary.img && (
                             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '15px', filter: 'grayscale(30%)' }}>
                               {diary.img.split(',').map((imgUrl, idx) => (
-                                <img key={idx} src={imgUrl} alt="废弃配图" className="post-image" style={{ width: '80px', height: '80px', borderRadius: '8px', objectFit: 'cover', margin: 0 }} />
+                                <img key={idx} src={imgUrl} alt="废弃配图" className="post-image" style={{ width: '80px', height: '80px', borderRadius: '8px', objectFit: 'cover', margin: 0, cursor: 'zoom-in' }} onClick={() => setFullscreenImg(imgUrl)} />
                               ))}
                             </div>
                           )}
@@ -861,6 +877,26 @@ function App() {
         )}
 
       </div>
+
+      {/* ✨ 终极魔法：全屏图片放大镜 (点击空白处退出) ✨ */}
+      {fullscreenImg && (
+        <div 
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 99999, display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'zoom-out', backdropFilter: 'blur(10px)' }}
+          onClick={() => setFullscreenImg(null)}
+        >
+          <img 
+            src={fullscreenImg} 
+            alt="放大预览" 
+            style={{ maxWidth: '95%', maxHeight: '95%', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 0 30px rgba(0,0,0,0.5)', cursor: 'default' }} 
+            onClick={(e) => e.stopPropagation()} // 防止点击图片本体时触发父容器的关闭动作
+          />
+          <button 
+            style={{ position: 'absolute', top: '30px', right: '30px', background: 'white', border: 'none', borderRadius: '50%', width: '40px', height: '40px', fontSize: '20px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}
+            onClick={() => setFullscreenImg(null)}
+          >✕</button>
+        </div>
+      )}
+
     </div>
   )
 }
