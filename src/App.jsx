@@ -63,17 +63,24 @@ function App() {
   // --- 📝 表单状态 ---
   const [newDiaryDate, setNewDiaryDate] = useState(""); 
   const [newDiaryText, setNewDiaryText] = useState("");
-  const [newDiaryImg, setNewDiaryImg] = useState(null);
+  // ✨ 魔法升级：改为数组，用来支持多张图片
+  const [newDiaryImgs, setNewDiaryImgs] = useState([]);
 
   // --- ✏️ 编辑状态 ---
   const [editingDiaryId, setEditingDiaryId] = useState(null); // 记住正在修改哪篇日记
   const [viewingDiaryId, setViewingDiaryId] = useState(null); // 记住当前进入了哪一天的“专属隔间”
   const [editDate, setEditDate] = useState("");
   const [editText, setEditText] = useState("");
-  const [editImg, setEditImg] = useState(null);
+  const [editImgs, setEditImgs] = useState([]); // ✨ 编辑状态也升级为多图数组
   // --- 🎬 幻灯片播放器状态 ---
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-  const allPhotos = [...diaries.map(d => d.img).filter(Boolean), ...standalonePhotos, ...aboutPhotos];
+  
+  // ✨ 智能收集所有照片（自动拆分日记里拼接的多图）
+  const allPhotos = [
+    ...diaries.flatMap(d => d.img ? d.img.split(',') : []), 
+    ...standalonePhotos, 
+    ...aboutPhotos
+  ];
 
   // --- 📅 动态万年历引擎 ---
   const [calYear, setCalYear] = useState(2026); 
@@ -86,17 +93,16 @@ function App() {
 
   // --- 🛠️ 交互函数 🛠️ ---
 
-  // 1. 发布日记
-  // 1. 发布日记 (🚀 云端发射升级版)
+  // 1. 发布日记 (🚀 云端发射升级版 + 多图支持)
   const handlePostDiary = async () => {
     if (!newDiaryDate) return alert("请先选择发生的日期哦！📅");
-    if (!newDiaryText && !newDiaryImg) return alert("写点内容或者传张照片吧！");
+    if (!newDiaryText && newDiaryImgs.length === 0) return alert("写点内容或者传张照片吧！");
     
     const newPost = {
       id: `post-${Date.now()}`,
       date: newDiaryDate,
       content: newDiaryText,
-      img: newDiaryImg 
+      img: newDiaryImgs.join(',') // ✨ 将多图数组用逗号连成字符串保存，不改变数据库结构
     };
 
     // ✨ 云端魔法 2：向 Supabase 数据库发射数据！
@@ -109,51 +115,54 @@ function App() {
       // 发射成功后，才在网页上显示出来
       setDiaries([newPost, ...diaries]);
       setNewDiaryText("");
-      setNewDiaryImg(null);
+      setNewDiaryImgs([]); // 发布完清空图片
       setNewDiaryDate("");
     }
   };
 
-  // 2. 本地图片上传
-  // 2. 图片上传 (🚀 升级为云端直传引擎)
-  const handleImageUpload = async (e, setImgState, isArray = false) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  // 2. 图片上传 (🚀 升级为批量直传引擎)
+  const handleImageUpload = async (e, setImgState, isArray = true) => {
+    const files = Array.from(e.target.files); // 获取选取的所有文件
+    if (files.length === 0) return;
 
-    // 1. 给照片起个独一无二的名字 (时间戳 + 原始后缀)，防止重名覆盖
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}.${fileExt}`;
-    const filePath = `${fileName}`;
+    // 给用户一点视觉反馈
+    alert(`🚀 照片正在飞向云端，一共 ${files.length} 张，请稍等...`);
 
-    // 2. 给用户一点视觉反馈
-    alert("🚀 照片正在飞向云端，请稍等几秒钟...");
+    const uploadedUrls = [];
 
-    // 3. 上传到 Supabase 的 love-photos 储物间
-    const { data, error } = await supabase.storage
-      .from('love-photos')
-      .upload(filePath, file);
+    // 循环上传每一张选中的照片
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const fileExt = file.name.split('.').pop();
+      // 加入随机数，防止瞬间同时传多张时名字打架被覆盖
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+      const filePath = `${fileName}`;
 
-    if (error) {
-      console.error("上传照片失败:", error);
-      alert("❌ 照片上传失败了，请看控制台报错！");
+      // 上传到 Supabase 的 love-photos 储物间
+      const { error } = await supabase.storage.from('love-photos').upload(filePath, file);
+
+      if (error) {
+        console.error(`第 ${i+1} 张照片上传失败:`, error);
+      } else {
+        // 上传成功后，要回公网访问链接
+        const { data: publicUrlData } = supabase.storage.from('love-photos').getPublicUrl(filePath);
+        uploadedUrls.push(publicUrlData.publicUrl);
+      }
+    }
+
+    if (uploadedUrls.length === 0) {
+      alert("❌ 照片全部上传失败了，请看控制台报错！");
       return;
     }
 
-    // 4. 上传成功后，向云端要回这张照片的“全球公网访问链接”
-    const { data: publicUrlData } = supabase.storage
-      .from('love-photos')
-      .getPublicUrl(filePath);
-
-    const finalUrl = publicUrlData.publicUrl;
-
-    // 5. 把这个真实的云端链接存进状态里
+    // 把这些真实的云端链接存进状态里（叠加在原来的照片后面）
     if (isArray) {
-      setImgState(prev => [finalUrl, ...prev]);
+      setImgState(prev => [...(prev || []), ...uploadedUrls]);
     } else {
-      setImgState(finalUrl);
+      setImgState(uploadedUrls[0]);
     }
 
-    alert("✅ 照片上传成功！现在可以点击【保存日记】啦！");
+    alert(`✅ ${uploadedUrls.length} 张照片上传成功！现在可以点击【保存】啦！`);
   };
 
   // 3. 生成回忆海报
@@ -176,10 +185,7 @@ function App() {
     setViewingDiaryId(postId); // ✨ 新增：告诉大脑现在进入了哪个隔间
   };
 
-  // 5. 删除日记并移入回收站
-  // 3. 删除日记 (🚀 云端彻底粉碎版)
- // 3. 删除日记 (🚀 云端彻底删除 + 回收站备份版)
-  // 3. 删除日记 (🚀 云端彻底删除 + 回收站倒计时备份版)
+  // 5. 删除日记 (🚀 云端彻底删除 + 回收站倒计时备份版)
   const handleDeleteDiary = async (id) => {
     const isConfirm = window.confirm("真的要删除这篇珍贵的日记吗？删了云端也找不回了哦！🥺");
     if (!isConfirm) return;
@@ -205,23 +211,24 @@ function App() {
       }
     }
   };
+
   // ✨ 开启修改模式：把原来的内容填进框里
   const handleStartEdit = (diary) => {
     setEditingDiaryId(diary.id);
     setEditDate(diary.date);
     setEditText(diary.content);
-    setEditImg(diary.img);
+    // 修改时，把拼在一起的字符串拆开还原成数组
+    setEditImgs(diary.img ? diary.img.split(',') : []);
   };
 
-  // ✨ 保存修改：用新内容覆盖旧内容
   // 4. 保存编辑 (🚀 云端同步更新版)
   const handleSaveEdit = async (id) => {
-    // 假设你编辑框里的内容存在 editText 这个状态里
-    // ✨ 云端魔法 4：告诉 Supabase，把对应 id 的日记的 content 更新为新的内容！
+    const updatedImgStr = editImgs.join(','); // 保存时再把多图拼成字符串
+    // ✨ 云端魔法 4：告诉 Supabase，把对应 id 的日记更新！
     const { error } = await supabase
       .from('diaries')
-      .update({ content: editText }) // 把 content 字段更新为 editText
-      .eq('id', id); // 同样，必须要告诉数据库是更新哪一篇
+      .update({ content: editText, img: updatedImgStr }) 
+      .eq('id', id); 
 
     if (error) {
       console.error("云端更新失败:", error);
@@ -229,9 +236,9 @@ function App() {
     } else {
       // 云端更新成功后，更新网页显示的内容，并退出编辑模式
       setDiaries(diaries.map(diary => 
-        diary.id === id ? { ...diary, content: editText } : diary
+        diary.id === id ? { ...diary, content: editText, img: updatedImgStr } : diary
       ));
-      setEditingDiaryId(null);; // 退出编辑状态
+      setEditingDiaryId(null); // 退出编辑状态
       alert("✅ 修改已同步到云端！");
     }
   };
@@ -241,7 +248,6 @@ function App() {
     setEditingDiaryId(null);
   };
 
-  // 7. 从回收站恢复日记
   // 7. 从回收站恢复日记 (🚀 云端浴火重生版)
   const handleRestoreDiary = async (diaryToRestore) => {
     // 把附加的 deletedAt 属性去掉，只保留原始清爽的数据发给云端
@@ -261,6 +267,7 @@ function App() {
       alert("✅ 恢复成功！它已经回到原来的那一天了！");
     }
   };
+
   // 6. 自动幻灯片播放
   useEffect(() => {
     let timer;
@@ -284,7 +291,7 @@ function App() {
       setTrashDiaries(validTrash);
     }
   }, []); // 空数组表示每次刷新网页时执行一次检查
-  // ✨ 8. 键盘左右键翻页魔法 (仅在隔间模式生效)
+
   // ✨ 8. 键盘左右键翻页魔法 (按【日期】翻页)
   useEffect(() => {
     if (!viewingDiaryId) return; // 没进隔间就不监听
@@ -380,15 +387,30 @@ function App() {
                     <input type="date" className="date-picker" value={newDiaryDate} onChange={(e) => setNewDiaryDate(e.target.value)} style={{ padding: '8px 15px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }} />
                   </div>
                   <textarea placeholder="在这里输入你们的日记内容..." value={newDiaryText} onChange={(e) => setNewDiaryText(e.target.value)} style={{ width: '100%', minHeight: '100px', padding: '15px', borderRadius: '12px', border: '1px solid #e2e8f0', boxSizing: 'border-box', backgroundColor: '#f8fafc', outline:'none', fontFamily:'inherit' }} />
-                  <div className="compose-actions" style={{ borderTop: 'none', paddingTop: '0', marginTop: '0' }}>
+                  
+                  <div className="compose-actions" style={{ borderTop: 'none', paddingTop: '0', marginTop: '0', flexWrap: 'wrap' }}>
                     <label className="upload-btn">
-                      {newDiaryImg ? '🖼️ 重新选择照片' : '📎 选择照片'}
-                      <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, setNewDiaryImg)} hidden />
+                      {newDiaryImgs.length > 0 ? '🖼️ 继续添加照片' : '📎 选择照片'}
+                      {/* ✨ 多选魔法：加上 multiple 属性 */}
+                      <input type="file" accept="image/*" multiple onChange={(e) => handleImageUpload(e, setNewDiaryImgs, true)} hidden />
                     </label>
+                    {/* 一键清空重新传 */}
+                    {newDiaryImgs.length > 0 && (
+                      <button onClick={() => setNewDiaryImgs([])} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold' }}>🗑️ 清空图片</button>
+                    )}
                     <button className="send-btn" onClick={handlePostDiary}>💾 保存日记</button>
                   </div>
-                  {newDiaryImg && (
-                    <div><span style={{ fontSize: '12px', color: '#94a3b8' }}>已选照片预览：</span><br/><img src={newDiaryImg} alt="预览" className="preview-img" style={{ marginTop: '5px' }} /></div>
+                  
+                  {/* ✨ 新增：多图发帖预览区 */}
+                  {newDiaryImgs.length > 0 && (
+                    <div style={{ marginTop: '10px' }}>
+                      <span style={{ fontSize: '12px', color: '#94a3b8' }}>已选 {newDiaryImgs.length} 张照片预览：</span>
+                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '8px' }}>
+                        {newDiaryImgs.map((url, idx) => (
+                          <img key={idx} src={url} alt="预览" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #fbcfe8' }} />
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
               </>
@@ -520,6 +542,7 @@ function App() {
                           /* 动态计算位置，防止箭头挡住日记内容 */
                           .arrow-left { left: 280px; } 
                           .arrow-right { right: 40px; } 
+                          @media (max-width: 768px) { .arrow-left { left: 10px; } .arrow-right { right: 10px; } }
                         `}</style>
                       )}
 
@@ -576,20 +599,38 @@ function App() {
                                 <textarea value={editText} onChange={(e) => setEditText(e.target.value)} style={{ width: '100%', minHeight: '100px', padding: '15px', borderRadius: '12px', border: '1px solid #fbcfe8', backgroundColor: '#fff', outline: 'none', fontFamily: 'inherit' }} />
                                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                                   <label className="upload-btn" style={{ padding: '8px 15px', fontSize: '13px', backgroundColor: '#fdf2f8', color: '#db2777' }}>
-                                    {editImg ? '🖼️ 更换照片' : '📎 添加照片'}
-                                    <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, setEditImg)} hidden />
+                                    {editImgs.length > 0 ? '🖼️ 继续添加照片' : '📎 添加照片'}
+                                    <input type="file" accept="image/*" multiple onChange={(e) => handleImageUpload(e, setEditImgs, true)} hidden />
                                   </label>
-                                  <button onClick={handleSaveEdit(diary.id)} style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 18px', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: 'bold' }}>✅ 保存修改</button>
+                                  {editImgs.length > 0 && <button onClick={() => setEditImgs([])} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize:'13px', fontWeight: 'bold' }}>🗑️ 清空图片</button>}
+                                  <button onClick={() => handleSaveEdit(diary.id)} style={{ backgroundColor: '#10b981', color: 'white', padding: '8px 18px', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: 'bold' }}>✅ 保存修改</button>
                                   <button onClick={handleCancelEdit} style={{ backgroundColor: '#f1f5f9', color: '#64748b', padding: '8px 18px', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: 'bold' }}>❌ 取消</button>
                                 </div>
-                                {editImg && <img src={editImg} alt="预览" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '12px', marginTop: '10px', border: '2px solid #fbcfe8' }} />}
+                                
+                                {/* 修改时的多图预览 */}
+                                {editImgs.length > 0 && (
+                                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+                                    {editImgs.map((url, idx) => (
+                                      <img key={idx} src={url} alt="预览" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #fbcfe8' }} />
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             ) : (
                               /* 📖 正常展示 UI */
                               <>
                                 <div className="post-header"><span className="post-date">📅 {diary.date}</span></div>
                                 <div className="post-content">
-                                  {diary.img && <img src={diary.img} alt="日记配图" className="post-image" />}
+                                  
+                                  {/* ✨ 魔法展示：如果只有1张就大图展示，多张自动变成双列网格 */}
+                                  {diary.img && (
+                                    <div style={{ display: 'grid', gridTemplateColumns: diary.img.includes(',') ? '1fr 1fr' : '1fr', gap: '10px', marginBottom: '15px' }}>
+                                      {diary.img.split(',').map((imgUrl, idx, arr) => (
+                                        <img key={idx} src={imgUrl} alt="日记配图" className="post-image" style={{ width: '100%', height: arr.length === 1 ? 'auto' : '250px', objectFit: 'cover', borderRadius: '12px', margin: 0 }} />
+                                      ))}
+                                    </div>
+                                  )}
+                                  
                                   <div className="post-text-area">
                                     <p className="post-text">{diary.content}</p>
                                     
@@ -694,14 +735,14 @@ function App() {
              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                <h2 className="section-title">专属照片墙</h2>
                <label className="upload-btn upload-primary">
-                  ➕ 独立传照片
-                  <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, setStandalonePhotos, true)} hidden />
+                 ➕ 独立传照片
+                 <input type="file" accept="image/*" multiple onChange={(e) => handleImageUpload(e, setStandalonePhotos, true)} hidden />
                </label>
              </div>
              <div className="photo-grid-demo" style={{marginTop:'20px'}}>
                {allPhotos.map((imgSrc, idx) => {
-                 // 去日记本里找找，这张照片是不是某篇日记里的？
-                 const linkedDiary = diaries.find(d => d.img === imgSrc);
+                 // 去日记本里找找，这张照片是不是某篇日记里的？(支持解析多图字符串)
+                 const linkedDiary = diaries.find(d => d.img && d.img.split(',').includes(imgSrc));
                  
                  return (
                    <div 
@@ -750,7 +791,7 @@ function App() {
               <div style={{marginTop:'20px'}}>
                 <label className="upload-btn">
                     💌 继续添加私密回忆照片
-                    <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, setAboutPhotos, true)} hidden />
+                    <input type="file" accept="image/*" multiple onChange={(e) => handleImageUpload(e, setAboutPhotos, true)} hidden />
                 </label>
               </div>
               {aboutPhotos.length > 0 && (
@@ -791,7 +832,14 @@ function App() {
                           </span>
                         </div>
                         <div className="post-content">
-                          {diary.img && <img src={diary.img} alt="废弃配图" className="post-image" style={{ filter: 'grayscale(30%)' }} />}
+                          {/* 回收站里也支持显示多图 */}
+                          {diary.img && (
+                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '15px', filter: 'grayscale(30%)' }}>
+                              {diary.img.split(',').map((imgUrl, idx) => (
+                                <img key={idx} src={imgUrl} alt="废弃配图" className="post-image" style={{ width: '80px', height: '80px', borderRadius: '8px', objectFit: 'cover', margin: 0 }} />
+                              ))}
+                            </div>
+                          )}
                           <div className="post-text-area">
                             <p className="post-text" style={{ color: '#64748b' }}>{diary.content}</p>
                             <div className="post-actions" style={{ marginTop: '15px', display: 'flex', justifyContent: 'flex-end' }}>
