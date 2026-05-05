@@ -43,9 +43,7 @@ function App() {
   // 3. 照片墙数据
   const [standalonePhotos, setStandalonePhotos] = useState(() => {
     const saved = localStorage.getItem('love_photos');
-    return saved ? JSON.parse(saved) : [
-      'https://images.pexels.com/photos/3178818/pexels-photo-3178818.jpeg?auto=compress&cs=tinysrgb&w=600'
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   // 4. 关于我们照片数据
@@ -224,22 +222,23 @@ function App() {
   // 4. 保存编辑 (🚀 云端同步更新版)
   const handleSaveEdit = async (id) => {
     const updatedImgStr = editImgs.join(','); // 保存时再把多图拼成字符串
-    // ✨ 云端魔法 4：告诉 Supabase，把对应 id 的日记更新！
+    
+    // ✨ 云端魔法升级：告诉云端，把内容、图片，以及【日期】全部更新！
     const { error } = await supabase
       .from('diaries')
-      .update({ content: editText, img: updatedImgStr }) 
+      .update({ content: editText, img: updatedImgStr, date: editDate }) // 👈 这里新增了 date: editDate
       .eq('id', id); 
 
     if (error) {
       console.error("云端更新失败:", error);
       alert("❌ 修改保存失败，请重试！");
     } else {
-      // 云端更新成功后，更新网页显示的内容，并退出编辑模式
+      // 云端更新成功后，同步更新网页上的显示内容，并退出编辑模式
       setDiaries(diaries.map(diary => 
-        diary.id === id ? { ...diary, content: editText, img: updatedImgStr } : diary
+        diary.id === id ? { ...diary, content: editText, img: updatedImgStr, date: editDate } : diary // 👈 这里也加入了 date: editDate
       ));
       setEditingDiaryId(null); // 退出编辑状态
-      alert("✅ 修改已同步到云端！");
+      alert("✅ 修改已完美同步到云端！");
     }
   };
 
@@ -353,7 +352,7 @@ function App() {
                 <button 
                   className={activeTab === 'diary' && !viewingDiaryId ? 'menu-btn active' : 'menu-btn'} 
                   onClick={() => { setActiveTab('diary'); setViewingDiaryId(null); }}
-                >📖 全部日记</button>
+                >📖 凡凡妞妞</button>
                 <button className={activeTab === 'calendar' ? 'menu-btn active' : 'menu-btn'} onClick={() => setActiveTab('calendar')}>📅 时光日历</button>
                 <button className={activeTab === 'photos' ? 'menu-btn active' : 'menu-btn'} onClick={() => setActiveTab('photos')}>📸 专属照片墙</button>
                 <button className={activeTab === 'about' ? 'menu-btn active' : 'menu-btn'} onClick={() => setActiveTab('about')}>❤️ 关于我们</button>
@@ -769,10 +768,10 @@ function App() {
            </div>
         )}
 
-        {/* --- ❤️ 房间 4：关于我们 --- */}
+        {/* --- ❤️ 房间 4：关于哥妞的点点滴滴 --- */}
         {activeTab === 'about' && (
           <div className="fade-in">
-            <h2 className="section-title">我们的故事</h2>
+            <h2 className="section-title">妞妞哥哥的故事</h2>
             <div className="memory-widget">
               {allPhotos.length > 0 ? (
                 <>
@@ -787,7 +786,7 @@ function App() {
               )}
             </div>
             <div className="about-card">
-              <p>这里是专属两个人的小世界。照片会在这里汇总成自动播放的回忆集。</p>
+              <p>这里是专属妞妞和凡凡的小世界。照片会在这里汇总成自动播放的回忆集。</p>
               <div style={{marginTop:'20px'}}>
                 <label className="upload-btn">
                     💌 继续添加私密回忆照片
