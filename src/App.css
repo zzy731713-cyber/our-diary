@@ -631,31 +631,103 @@ body { margin: 0; padding: 0; font-family: 'Microsoft YaHei', -apple-system, san
 
 
 /* ==================================================
-   🌟 终极魔法：手机端平板端的响应式设计 (Media Queries)
+   🌟 终极魔法：三端自适应响应式布局 (Responsive Design)
 ================================================== */
-@media (max-width: 768px) {
-  /* 手机屏幕变小，改成上下排布 */
+
+/* 1. 💻 电脑端 (屏幕宽度 > 1024px) */
+/* 默认使用的是你文件上面写的全部 CSS，电脑端表现完美，无需额外代码！ */
+
+
+/* 2. 📱 iPad 平板端 (屏幕宽度在 768px 到 1024px 之间) */
+@media (max-width: 1024px) and (min-width: 768px) {
+  .main-content {
+    padding: 25px; /* 稍微减小主内容的四周留白 */
+  }
+  
+  /* iPad 竖屏时，左右分栏会太挤，改为上下排列 */
+  .diary-layout {
+    flex-direction: column; 
+  }
+  
+  /* 左侧时光轴变成顶部的横向条 */
+  .timeline-index {
+    width: 100%;
+    position: static;
+    display: flex;
+    overflow-x: auto; /* 允许横向滑动 */
+    white-space: nowrap;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px dashed #fbcfe8;
+  }
+  
+  .timeline-tree {
+    display: flex;
+    gap: 20px;
+  }
+}
+
+
+/* 3. 📱 iPhone 13 Pro 等手机端 (屏幕宽度 < 768px) */
+@media (max-width: 767px) {
+  /* 整个屏幕由左右结构变成上下结构 */
   .app-layout {
     flex-direction: column; 
   }
 
-  /* 手机上的导航栏变成顶部横条 */
+  /* 侧边栏变成顶部的导航条 */
   .side-navigation {
-    width: 100%; /* 占满整个手机宽度 */
+    width: 100% !important; 
     height: auto;
     border-right: none;
     border-bottom: 1px solid #fbcfe8;
-    transition: max-height 0.3s ease;
+    transition: max-height 0.3s ease; 
+    max-height: 500px; /* 展开菜单的高度 */
+    z-index: 99;
   }
 
-  /* 手机上的折叠状态：把高度压缩，只显示汉堡按钮 */
+  /* 手机上的折叠状态：只保留汉堡按钮的高度 */
   .side-navigation.collapsed {
-    width: 100%;
-    max-height: 60px; /* 压扁它 */
+    max-height: 60px !important; 
   }
 
-  /* 手机上的内容区四周留白缩小 */
+  /* 汉堡按钮居中更好看 */
+  .hamburger-btn {
+    text-align: center; 
+    padding: 15px;
+  }
+
+  /* 优化手机端的主内容显示面积 */
   .main-content {
     padding: 15px;
+  }
+
+  /* 标题字体稍微缩小，适应小屏幕 */
+  .section-title {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+
+  /* 时光轴和日记改为上下排布 */
+  .diary-layout {
+    flex-direction: column;
+  }
+
+  .timeline-index {
+    width: 100%;
+    position: static;
+    margin-bottom: 20px;
+  }
+
+  /* 限制手机端日记配图的最大高度，防止一张图占满整个屏幕 */
+  .post-image {
+    max-height: 300px;
+    object-fit: cover;
+  }
+
+  /* 调整按钮大小，方便手指点击 */
+  .post-actions button {
+    padding: 8px 12px;
+    font-size: 12px;
   }
 }
