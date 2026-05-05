@@ -9,8 +9,8 @@ function App() {
   const [activeTab, setActiveTab] = useState('diary');
   const [calView, setCalView] = useState('month'); 
   const [expandedTimeline, setExpandedTimeline] = useState({}); // 🌳 记住时光树里哪些枝桠被折叠了
+  const [isCollapsed, setIsCollapsed] = useState(false); // 👈 新增：控制侧边栏折叠的开关
 
-  // --- 🌟 核心动态数据 🌟 ---
 // --- 🌟 核心动态数据 🌟 ---
 
   // 1. 日记数据（初始为空屏幕）
@@ -322,25 +322,38 @@ function App() {
 
 
   // ===================== 页面渲染 =====================
-  return (
-    <div className="app-layout">
-      {/* 🟢 左侧导航栏 */}
-      <div className="side-navigation">
-        <div className="sidebar-profile">
-          <div className="avatar">💌</div>
-          <h3>我们的恋爱日记</h3>
-        </div>
-        <div className="sidebar-menu">
-          <button 
-            className={activeTab === 'diary' && !viewingDiaryId ? 'menu-btn active' : 'menu-btn'} 
-            onClick={() => { setActiveTab('diary'); setViewingDiaryId(null); }}
-          >📖 全部日记</button>
-          <button className={activeTab === 'calendar' ? 'menu-btn active' : 'menu-btn'} onClick={() => setActiveTab('calendar')}>📅 时光日历</button>
-          <button className={activeTab === 'photos' ? 'menu-btn active' : 'menu-btn'} onClick={() => setActiveTab('photos')}>📸 专属照片墙</button>
-          <button className={activeTab === 'about' ? 'menu-btn active' : 'menu-btn'} onClick={() => setActiveTab('about')}>❤️ 关于我们</button>
-          <button className={activeTab === 'trash' ? 'menu-btn active' : 'menu-btn'} onClick={() => setActiveTab('trash')}>🗑️ 回收站</button>
-        </div>
-      </div>
+      return (
+        <div className="app-layout">
+          
+          <div className={`side-navigation ${isCollapsed ? 'collapsed' : ''}`}>
+            
+            
+            <button 
+              className="hamburger-btn" 
+              onClick={() => setIsCollapsed(!isCollapsed)}
+            >
+              ☰
+            </button>
+
+            
+            <div className="sidebar-content">
+              <div className="sidebar-profile">
+                <div className="avatar">💌</div>
+                <h3>我们的恋爱日记</h3>
+              </div>
+              
+              <div className="sidebar-menu">
+                <button 
+                  className={activeTab === 'diary' && !viewingDiaryId ? 'menu-btn active' : 'menu-btn'} 
+                  onClick={() => { setActiveTab('diary'); setViewingDiaryId(null); }}
+                >📖 全部日记</button>
+                <button className={activeTab === 'calendar' ? 'menu-btn active' : 'menu-btn'} onClick={() => setActiveTab('calendar')}>📅 时光日历</button>
+                <button className={activeTab === 'photos' ? 'menu-btn active' : 'menu-btn'} onClick={() => setActiveTab('photos')}>📸 专属照片墙</button>
+                <button className={activeTab === 'about' ? 'menu-btn active' : 'menu-btn'} onClick={() => setActiveTab('about')}>❤️ 关于我们</button>
+                <button className={activeTab === 'trash' ? 'menu-btn active' : 'menu-btn'} onClick={() => setActiveTab('trash')}>🗑️ 回收站</button>
+              </div>
+            </div>
+          </div>
 
       {/* 🔴 右侧主内容区 */}
       <div className="main-content">

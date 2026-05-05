@@ -568,3 +568,94 @@ body { margin: 0; padding: 0; font-family: 'Microsoft YaHei', -apple-system, san
   border-color: #ff4757;
   background-color: white;
 }
+/* ==================================================
+   📱 侧边栏折叠 & 手机响应式适配专属 CSS
+================================================== */
+
+/* 整个页面的大框架：左右排布 */
+.app-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden; /* 防止页面整体乱跑 */
+}
+
+/* 🌹 左侧边栏默认样式（电脑端展开时） */
+.side-navigation {
+  width: 250px; 
+  transition: width 0.3s ease; /* 丝滑折叠的魔法 */
+  overflow-x: hidden; 
+  overflow-y: auto; /* 如果菜单太多，允许上下滑动 */
+  background-color: #fffafb; /* 如果你原来有背景色，用你原来的 */
+  border-right: 1px solid #fbcfe8;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 🌹 折叠后的样式 */
+.side-navigation.collapsed {
+  width: 60px; /* 折叠后只留一点点缝隙给汉堡按钮 */
+}
+
+/* 折叠时，把里面的内容（头像、文字菜单等）全隐藏掉，只留按钮 */
+.side-navigation.collapsed .sidebar-content {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 保证内容区动画平滑，并且文字不换行 */
+.sidebar-content {
+  transition: opacity 0.2s ease; 
+  white-space: nowrap; 
+  padding: 20px;
+}
+
+/* 汉堡包按钮的样式 */
+.hamburger-btn {
+  font-size: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 15px;
+  color: #db2777; 
+  text-align: left;
+}
+
+/* 右侧主体内容区域 */
+.main-content {
+  flex: 1; /* 占据剩下的所有空间 */
+  padding: 30px;
+  overflow-y: auto; /* 右侧内容多了可以独立滑动 */
+  background-color: #f8fafc;
+}
+
+
+/* ==================================================
+   🌟 终极魔法：手机端平板端的响应式设计 (Media Queries)
+================================================== */
+@media (max-width: 768px) {
+  /* 手机屏幕变小，改成上下排布 */
+  .app-layout {
+    flex-direction: column; 
+  }
+
+  /* 手机上的导航栏变成顶部横条 */
+  .side-navigation {
+    width: 100%; /* 占满整个手机宽度 */
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid #fbcfe8;
+    transition: max-height 0.3s ease;
+  }
+
+  /* 手机上的折叠状态：把高度压缩，只显示汉堡按钮 */
+  .side-navigation.collapsed {
+    width: 100%;
+    max-height: 60px; /* 压扁它 */
+  }
+
+  /* 手机上的内容区四周留白缩小 */
+  .main-content {
+    padding: 15px;
+  }
+}
